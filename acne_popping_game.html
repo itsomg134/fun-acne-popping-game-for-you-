@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acne Popping Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        
+        .game-container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 600px;
+            width: 90%;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #764ba2;
+            margin-bottom: 20px;
+            font-size: 2em;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        
+        .stat {
+            background: #f0f0f0;
+            padding: 10px 20px;
+            border-radius: 10px;
+        }
+        
+        .score { color: #4CAF50; }
+        .timer { color: #ff5722; }
+        .level { color: #2196F3; }
+        
+        .face-container {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            background: #ffd4b3;
+            border-radius: 50% 50% 45% 45%;
+            margin: 20px auto;
+            overflow: hidden;
+            cursor: crosshair;
+        }
+        
+        .acne {
+            position: absolute;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.1s;
+            animation: pulse 1s infinite;
+        }
+        
+        .acne:hover {
+            transform: scale(1.2);
+        }
+        
+        .acne.small {
+            width: 15px;
+            height: 15px;
+            background: radial-gradient(circle, #ff6b6b, #cc0000);
+        }
+        
+        .acne.medium {
+            width: 25px;
+            height: 25px;
+            background: radial-gradient(circle, #ff4444, #aa0000);
+        }
+        
+        .acne.large {
+            width: 35px;
+            height: 35px;
+            background: radial-gradient(circle, #ff0000, #880000);
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        @keyframes pop {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.5); opacity: 0.5; }
+            100% { transform: scale(0); opacity: 0; }
+        }
+        
+        .pop-effect {
+            animation: pop 0.3s ease-out;
+        }
+        
+        .splash {
+            position: absolute;
+            color: #ffeb3b;
+            font-size: 24px;
+            font-weight: bold;
+            pointer-events: none;
+            animation: splash 0.5s ease-out;
+        }
+        
+        @keyframes splash {
+            0% { transform: translateY(0) scale(0); opacity: 1; }
+            100% { transform: translateY(-50px) scale(1.5); opacity: 0; }
+        }
+        
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            font-size: 1.2em;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .btn-start {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .game-over {
+            display: none;
+            text-align: center;
+        }
+        
+        .game-over h2 {
+            color: #764ba2;
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+        
+        .final-score {
+            font-size: 3em;
+            color: #4CAF50;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🎯 Acne Popping Game</h1>
+        
+        <div class="stats">
+            <div class="stat score">Score: <span id="score">0</span></div>
+            <div class="stat timer">Time: <span id="timer">60</span>s</div>
+            <div class="stat level">Level: <span id="level">1</span></div>
+        </div>
+        
+        <div class="face-container" id="face"></div>
+        
+        <button class="btn btn-start" id="startBtn" onclick="startGame()">Start Game</button>
+        
+        <div class="game-over" id="gameOver">
+            <h2>Game Over!</h2>
+            <div class="final-score" id="finalScore">0</div>
+            <p style="font-size: 1.2em; margin-bottom: 20px;">Great job clearing that skin!</p>
+            <button class="btn btn-start" onclick="resetGame()">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        let score = 0;
+        let timeLeft = 60;
+        let level = 1;
+        let gameActive = false;
+        let timerInterval;
+        let spawnInterval;
+        let acneCount = 0;
+        
+        const face = document.getElementById('face');
+        const scoreEl = document.getElementById('score');
+        const timerEl = document.getElementById('timer');
+        const levelEl = document.getElementById('level');
+        const startBtn = document.getElementById('startBtn');
+        const gameOverEl = document.getElementById('gameOver');
+        const finalScoreEl = document.getElementById('finalScore');
+        
+        function startGame() {
+            gameActive = true;
+            score = 0;
+            timeLeft = 60;
+            level = 1;
+            acneCount = 0;
+            
+            updateDisplay();
+            startBtn.style.display = 'none';
+            gameOverEl.style.display = 'none';
+            face.innerHTML = '';
+            
+            timerInterval = setInterval(updateTimer, 1000);
+            spawnAcne();
+            spawnInterval = setInterval(spawnAcne, 1500);
+        }
+        
+        function updateTimer() {
+            timeLeft--;
+            timerEl.textContent = timeLeft;
+            
+            if (timeLeft <= 0) {
+                endGame();
+            }
+        }
+        
+        function spawnAcne() {
+            if (!gameActive) return;
+            
+            const acne = document.createElement('div');
+            acne.className = 'acne';
+            
+            const sizes = ['small', 'medium', 'large'];
+            const points = [10, 20, 30];
+            const sizeIndex = Math.floor(Math.random() * sizes.length);
+            
+            acne.classList.add(sizes[sizeIndex]);
+            acne.dataset.points = points[sizeIndex];
+            
+            const maxX = face.offsetWidth - 40;
+            const maxY = face.offsetHeight - 40;
+            
+            acne.style.left = Math.random() * maxX + 'px';
+            acne.style.top = Math.random() * maxY + 'px';
+            
+            acne.onclick = function(e) {
+                popAcne(this, e);
+            };
+            
+            face.appendChild(acne);
+            acneCount++;
+            
+            setTimeout(() => {
+                if (acne.parentNode) {
+                    acne.remove();
+                    acneCount--;
+                }
+            }, 3000);
+        }
+        
+        function popAcne(acne, e) {
+            if (!gameActive) return;
+            
+            const points = parseInt(acne.dataset.points);
+            score += points;
+            acneCount--;
+            
+            acne.classList.add('pop-effect');
+            
+            const splash = document.createElement('div');
+            splash.className = 'splash';
+            splash.textContent = '+' + points;
+            splash.style.left = e.offsetX + 'px';
+            splash.style.top = e.offsetY + 'px';
+            face.appendChild(splash);
+            
+            setTimeout(() => splash.remove(), 500);
+            setTimeout(() => acne.remove(), 300);
+            
+            updateDisplay();
+            checkLevelUp();
+        }
+        
+        function checkLevelUp() {
+            const newLevel = Math.floor(score / 200) + 1;
+            if (newLevel > level) {
+                level = newLevel;
+                timeLeft += 10;
+                clearInterval(spawnInterval);
+                const newSpeed = Math.max(500, 1500 - (level * 200));
+                spawnInterval = setInterval(spawnAcne, newSpeed);
+            }
+        }
+        
+        function updateDisplay() {
+            scoreEl.textContent = score;
+            levelEl.textContent = level;
+        }
+        
+        function endGame() {
+            gameActive = false;
+            clearInterval(timerInterval);
+            clearInterval(spawnInterval);
+            
+            finalScoreEl.textContent = score;
+            gameOverEl.style.display = 'block';
+            
+            const acnes = document.querySelectorAll('.acne');
+            acnes.forEach(acne => acne.remove());
+        }
+        
+        function resetGame() {
+            startBtn.style.display = 'block';
+            gameOverEl.style.display = 'none';
+            face.innerHTML = '';
+        }
+    </script>
+</body>
+</html>
